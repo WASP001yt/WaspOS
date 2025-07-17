@@ -319,6 +319,14 @@ int execute_single_command(const char* cmd) {
         return 1;
     }
     
+    // Handle clear command in bash scripts
+    if (strcmp(substituted_cmd, "clear") == 0) {
+        clear_graphics(VGA_BLUE);
+        draw_string(10, 10, "Graphics OS Shell", VGA_WHITE);
+        cursor_y = 30;
+        return 1;
+    }
+    
     return 0;
 }
 
@@ -418,8 +426,7 @@ void execute_bash_file(const char* fname) {
                             if (*body_trimmed && *body_trimmed != '}' && *body_trimmed != '\0') {
                                 execute_single_command(body_trimmed);
                             }
-                        }
-make                        
+                        }                    
                         // Add delay between iterations
                         for (volatile int delay = 0; delay < 20000000; delay++);
                     }
@@ -856,6 +863,7 @@ void kmain() {
         }
     }
 }
+
 
 
 
