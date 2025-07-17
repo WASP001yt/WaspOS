@@ -314,8 +314,7 @@ int execute_single_command(const char* cmd) {
             fill_rect(x + depth - i, y + i - depth, width, 1, brightcolor);
         }
         
-        // Small delay for animation
-        for (volatile int delay = 0; delay < 100000; delay++);
+        // Remove the wait_key_release() and screen clearing here
         
         return 1;
     }
@@ -352,107 +351,80 @@ void execute_bash_file(const char* fname) {
         
         if (*trimmed && *trimmed != '#') {
             // Check for for loop
-            if (strncmp(trimmed, "for (", 5) == 0) {
-                // Parse for loop: for (let i = 1; i < 200; i++)
-                const char* ptr = trimmed + 5;
-                
-                // Skip "let "
+            if (strncmp(trimmed, "for ", 4) == 0) {
+                // Simple for loop parsing: for i 1 10
+                const char* ptr = trimmed + 4;
                 while (*ptr == ' ' || *ptr == '\t') ptr++;
-                if (strncmp(ptr, "let ", 4) == 0) ptr += 4;
                 
-                // Get loop variable name
+                // Get variable name
                 char loop_var[32];
                 int var_len = 0;
-                while (*ptr && *ptr != ' ' && *ptr != '=' && var_len < 31) {
+                while (*ptr && *ptr != ' ' && *ptr != '\t' && var_len < 31) {
                     loop_var[var_len++] = *ptr++;
                 }
                 loop_var[var_len] = '\0';
                 
-                // Parse initialization
-                while (*ptr == ' ' || *ptr == '\t' || *ptr == '=') ptr++;
+                // Get start value
+                while (*ptr == ' ' || *ptr == '\t') ptr++;
                 int start_val = atoi(ptr);
                 
-                // Skip to condition
-                while (*ptr && *ptr != ';') ptr++;
-                if (*ptr == ';') ptr++;
-                while (*ptr == ' ' || *ptr == '\t') ptr++;
-                
-                // Skip variable name in condition
-                while (*ptr && *ptr != '<' && *ptr != '>') ptr++;
-                if (*ptr == '<') ptr++;
+                // Skip to end value
+                while (*ptr && *ptr != ' ' && *ptr != '\t') ptr++;
                 while (*ptr == ' ' || *ptr == '\t') ptr++;
                 int end_val = atoi(ptr);
                 
-                // Parse increment - skip to third part
-                while (*ptr && *ptr != ';') ptr++;
-                if (*ptr == ';') ptr++;
-                while (*ptr == ' ' || *ptr == '\t') ptr++;
-                
-                int increment = 1; // default
-                if (strstr(ptr, "++")) {
-                    increment = 1;
-                } else if (strstr(ptr, "+=")) {
-                    // Find the number after +=
-                    while (*ptr && *ptr != '+') ptr++;
-                    if (*ptr == '+' && *(ptr+1) == '=') {
-                        ptr += 2;
-                        while (*ptr == ' ' || *ptr == '\t') ptr++;
-                        increment = atoi(ptr);
-                    }
-                }
+                // Debug output
+                draw_string(10, cursor_y, "Loop found:", VGA_YELLOW);
+                cursor_y += 16;
                 
                 // Skip to opening brace
                 while (*line_end && *line_end != '{') line_end++;
                 if (*line_end == '{') {
                     line_end++; // Skip opening brace
                     
-                    // Store loop body
-                    char loop_body[1024];
-                    int body_len = 0;
+                    // Find closing brace and store body
+                    char* body_start = line_end;
                     int brace_count = 1;
-                    
-                    while (*line_end && brace_count > 0 && body_len < sizeof(loop_body) - 1) {
+                    while (*line_end && brace_count > 0) {
                         if (*line_end == '{') brace_count++;
                         else if (*line_end == '}') brace_count--;
-                        
-                        if (brace_count > 0) {
-                            loop_body[body_len++] = *line_end;
-                        }
-                        line_end++;
+                        if (brace_count > 0) line_end++;
                     }
-                    loop_body[body_len] = '\0';
                     
-                    // Execute loop
-                    for (int i = start_val; i < end_val; i += increment) {
+                    // Execute loop multiple times
+                    for (int loop_iter = start_val; loop_iter < end_val; loop_iter++) {
                         char val_str[32];
-                        itoa(i, val_str);
+                        itoa(loop_iter, val_str);
                         set_variable(loop_var, val_str);
                         
-                        // Execute loop body
-                        char* body_ptr = loop_body;
-                        char body_line[256];
-                        
-                        while (*body_ptr) {
-                            // Extract one line from body
+                        // Execute body
+                        char* body_ptr = body_start;
+                        while (body_ptr < line_end) {
+                            char body_line[256];
                             int line_len = 0;
-                            while (*body_ptr && *body_ptr != '\n' && *body_ptr != '\r' && line_len < 255) {
+                            
+                            // Extract line
+                            while (body_ptr < line_end && *body_ptr != '\n' && *body_ptr != '\r' && line_len < 255) {
                                 body_line[line_len++] = *body_ptr++;
                             }
                             body_line[line_len] = '\0';
                             
                             // Skip newlines
-                            while (*body_ptr && (*body_ptr == '\n' || *body_ptr == '\r')) body_ptr++;
+                            while (body_ptr < line_end && (*body_ptr == '\n' || *body_ptr == '\r')) body_ptr++;
                             
-                            // Execute line if not empty
+                            // Execute if not empty
                             char* body_trimmed = body_line;
                             while (*body_trimmed == ' ' || *body_trimmed == '\t') body_trimmed++;
-                            if (*body_trimmed && *body_trimmed != '#') {
+                            if (*body_trimmed && *body_trimmed != '}' && *body_trimmed != '\0') {
                                 execute_single_command(body_trimmed);
                             }
                         }
+make                        
+                        // Add delay between iterations
+                        for (volatile int delay = 0; delay < 20000000; delay++);
                     }
                     
-                    // line_end is already positioned after the closing brace
+                    if (*line_end == '}') line_end++;
                     line_start = line_end;
                     continue;
                 }
@@ -842,9 +814,16 @@ void kmain() {
                 cursor_y += 65;
             }
             else {
-                draw_string(10, cursor_y, "Unknown command", VGA_WHITE);
- 
-               cursor_y += 16;
+                // Check if command ends with .bash and execute as bash file
+                int cmd_len = strlen(cmd);
+                if (cmd_len > 5 && strcmp(cmd + cmd_len - 5, ".bash") == 0) {
+                    execute_bash_file(cmd);
+                    cursor_y += 16;
+                }
+                else {
+                    draw_string(10, cursor_y, "Unknown command", VGA_WHITE);
+                    cursor_y += 16;
+                }
             }
             
             if (cursor_y >= 180) {
@@ -877,6 +856,14 @@ void kmain() {
         }
     }
 }
+
+
+
+
+
+
+
+
 
 
 
