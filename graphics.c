@@ -396,12 +396,3 @@ void draw_string(int x, int y, const char* str, uint8_t color) {
 }
 
 
-
-
-
-
-
-
-
-
-

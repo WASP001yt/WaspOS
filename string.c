@@ -103,3 +103,32 @@ int parse_int(const char** ptr, int* result) {
     
     return 1;
 }
+
+char* strcpy(char* dest, const char* src) {
+    char* original_dest = dest;
+    while (*src) {
+        *dest++ = *src++;
+    }
+    *dest = '\0';
+    return original_dest;
+}
+
+char* strstr(const char* haystack, const char* needle) {
+    if (!*needle) return (char*)haystack;
+    
+    while (*haystack) {
+        const char* h = haystack;
+        const char* n = needle;
+        
+        while (*h && *n && *h == *n) {
+            h++;
+            n++;
+        }
+        
+        if (!*n) return (char*)haystack;
+        haystack++;
+    }
+    
+    return 0;
+}
+
