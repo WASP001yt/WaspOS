@@ -1,8 +1,8 @@
 CFLAGS=-m32 -ffreestanding -nostdlib -fno-pie -fno-stack-protector
 LDFLAGS=-m elf_i386 -T link.ld
 
-SOURCES=multiboot_header.asm kernel_entry.asm kernel.c disk.c string.c graphics.c install.c
-OBJS=multiboot_header.o kernel_entry.o kernel.o disk.o string.o graphics.o install.o
+SOURCES=multiboot_header.asm kernel_entry.asm kernel.c disk.c string.c graphics.c
+OBJS=multiboot_header.o kernel_entry.o kernel.o disk.o string.o graphics.o
 
 all: kernel.elf os.iso
 
@@ -24,8 +24,6 @@ disk.o: disk.c
 string.o: string.c
 	gcc $(CFLAGS) -c string.c -o string.o
 
-install.o: install.c
-	gcc $(CFLAGS) -c install.c -o install.o
 
 kernel.elf: $(OBJS) link.ld
 	ld $(LDFLAGS) $(OBJS) -o kernel.elf

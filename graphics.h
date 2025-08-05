@@ -18,7 +18,7 @@
 #define VGA_LIGHT_RED 12
 #define VGA_LIGHT_MAGENTA 13
 #define VGA_YELLOW 14
-#define VGA_WHITE 15
+#define VGA_WHITE 31
 
 void init_graphics();
 void clear_graphics(uint8_t color);

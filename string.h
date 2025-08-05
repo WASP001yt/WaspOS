@@ -8,7 +8,8 @@ int parse_int(const char** ptr, int* result);
 int parse_cube_cmd(const char* cmd, int* x, int* y, int* width, int* height, int* color, int* darkcolor, int* brightcolor);
 char* strcpy(char* dest, const char* src);
 char* strstr(const char* haystack, const char* needle);
-
+int parse_bg_cmd(const char* cmd, int* color);
+int parse_fg_cmd(const char* cmd, int* color);
 #endif
 
 

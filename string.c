@@ -37,13 +37,51 @@ int parse_rect_cmd(const char* cmd, int* x, int* y, int* width, int* height, int
     
     if (!parse_int(&ptr, color)) return 0;
     
-    if (*color < 0x00 || *color > 0x0F) {
+    if (*color < 0x00 || *color > 0xFF) {
+        return 0;
+    }
+    
+    return 1;
+}
+int parse_bg_cmd(const char* cmd, int* color) {
+    if (strncmp(cmd, "bg", 2) != 0) {
+        return 0;
+    }
+    
+    const char* ptr = cmd + 2;
+    
+    while (*ptr == ' ' || *ptr == '\t') {
+        ptr++;
+    }
+    
+    if (!parse_int(&ptr, color)) return 0;
+    
+    if (*color < 0x00 || *color > 0xFF) {
         return 0;
     }
     
     return 1;
 }
 
+int parse_fg_cmd(const char* cmd, int* color) {
+    if (strncmp(cmd, "fg", 2) != 0) {
+        return 0;
+    }
+    
+    const char* ptr = cmd + 2;
+    
+    while (*ptr == ' ' || *ptr == '\t') {
+        ptr++;
+    }
+    
+    if (!parse_int(&ptr, color)) return 0;
+    
+    if (*color < 0x00 || *color > 0xFF) {
+        return 0;
+    }
+    
+    return 1;
+}
 int parse_cube_cmd(const char* cmd, int* x, int* y, int* width, int* height, int* color, int* darkcolor, int* brightcolor) {
     if (strncmp(cmd, "cube", 4) != 0) {
         return 0;
@@ -69,7 +107,7 @@ int parse_cube_cmd(const char* cmd, int* x, int* y, int* width, int* height, int
     
     if (!parse_int(&ptr, brightcolor)) return 0;
     
-    if (*color < 0x00 || *color > 0x0F) {
+    if (*color < 0x00 || *color > 0xFF) {
         return 0;
     }
     
